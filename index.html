@@ -52,8 +52,38 @@
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             font-size: 0.9em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .upload-area {
@@ -169,12 +199,6 @@
             font-size: 0.85em;
         }
 
-        .file-progress {
-            color: #667eea;
-            font-size: 0.85em;
-            margin-top: 5px;
-        }
-
         .file-actions {
             display: flex;
             gap: 10px;
@@ -242,25 +266,28 @@
             }
         }
 
-        .error-message {
-            background: #f44336;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: center;
-            display: none;
-            animation: slideDown 0.3s ease-out;
-        }
-
         .link-container {
             background: #f8f9ff;
             padding: 15px;
             border-radius: 10px;
             margin-top: 10px;
+        }
+
+        .link-item {
             display: flex;
-            align-items: center;
             gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .link-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .link-label {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 80px;
         }
 
         .link-input {
@@ -268,12 +295,13 @@
             padding: 10px;
             border: 2px solid #667eea;
             border-radius: 8px;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .btn-copy {
             background: #667eea;
             color: white;
+            padding: 10px 20px;
             white-space: nowrap;
         }
 
@@ -281,44 +309,60 @@
             background: #764ba2;
         }
 
-        .uploaded-files {
-            margin-top: 20px;
-            display: none;
+        .download-section {
+            text-align: center;
         }
 
-        .uploaded-item {
-            background: #f8f9ff;
-            border-radius: 10px;
+        .download-input {
+            width: 100%;
             padding: 15px;
-            margin-bottom: 10px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .uploaded-link {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .uploaded-link input {
-            flex: 1;
-            padding: 8px;
             border: 2px solid #667eea;
-            border-radius: 8px;
-            font-size: 0.85em;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 15px;
         }
 
         .btn-download {
             background: #4caf50;
             color: white;
-            padding: 8px 15px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.85em;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
         }
 
         .btn-download:hover {
             background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .file-preview {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .preview-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .preview-size {
+            color: #999;
+            margin-bottom: 15px;
+        }
+
+        .btn-download-file {
+            background: #667eea;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 10px;
         }
 
         @media (max-width: 600px) {
@@ -346,6 +390,15 @@
             .btn {
                 flex: 1;
             }
+
+            .link-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .link-label {
+                min-width: auto;
+            }
         }
     </style>
 </head>
@@ -354,64 +407,64 @@
         <h1>📤 File Share</h1>
         <p class="subtitle">ဖိုင်များကို လွယ်ကူစွာ upload လုပ်၍ မျှဝေပါ</p>
 
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">☁️</div>
-            <div class="upload-text">ဖိုင်များကို ဤနေရာတွင် ဆွဲယူပါ</div>
-            <div class="upload-hint">သို့မဟုတ် click နှိပ်၍ ရွေးချယ်ပါ (Max 10MB per file)</div>
-            <input type="file" id="fileInput" multiple>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('upload')">📤 Upload</button>
+            <button class="tab" onclick="switchTab('download')">📥 Download</button>
         </div>
 
-        <div class="file-list" id="fileList"></div>
+        <div id="uploadTab" class="tab-content active">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">☁️</div>
+                <div class="upload-text">ဖိုင်များကို ဤနေရာတွင် ဆွဲယူပါ</div>
+                <div class="upload-hint">သို့မဟုတ် click နှိပ်၍ ရွေးချယ်ပါ (Max 5MB)</div>
+                <input type="file" id="fileInput" multiple>
+            </div>
 
-        <button class="btn btn-upload" id="uploadBtn" disabled>
-            🚀 Upload လုပ်မည်
-        </button>
+            <div class="file-list" id="fileList"></div>
 
-        <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage">
-            ✅ ဖိုင်များကို အောင်မြင်စွာ upload လုပ်ပြီးပါပြီ!
+            <button class="btn btn-upload" id="uploadBtn" disabled>
+                🚀 Generate Links
+            </button>
+
+            <div class="success-message" id="successMessage">
+                ✅ Links များ ဖန်တီးပြီးပါပြီ!
+                <div class="link-container" id="linkContainer"></div>
+            </div>
         </div>
 
-        <div class="uploaded-files" id="uploadedFiles"></div>
+        <div id="downloadTab" class="tab-content">
+            <div class="download-section">
+                <h3 style="color: #667eea; margin-bottom: 20px;">📥 File Download</h3>
+                <input type="text" class="download-input" id="downloadCode" placeholder="Download code ထည့်ပါ">
+                <button class="btn btn-download" onclick="downloadFile()">Download လုပ်မည်</button>
+                <div class="file-preview" id="filePreview"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
-
-        // Firebase Configuration - သင့် Firebase config ကို ဒီမှာ ထည့်ပါ
-        const firebaseConfig = {
-  apiKey: "AIzaSyC9Npr9mDuB2_8eItvM-SYkJ813el9wNBU",
-  authDomain: "dmo69-b767a.firebaseapp.com",
-  databaseURL: "https://dmo69-b767a-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "dmo69-b767a",
-  storageBucket: "dmo69-b767a.firebasestorage.app",
-  messagingSenderId: "238446043147",
-  appId: "1:238446043147:web:1ddd461ac0f2614605270e",
-  measurementId: "G-C0MXH3Y44V"
-};
-
-        // Initialize Firebase
-        let app, storage;
-        try {
-            app = initializeApp(firebaseConfig);
-            storage = getStorage(app);
-        } catch (error) {
-            console.error('Firebase initialization error:', error);
-            showError('Firebase configuration လိုအပ်ပါသည်။ README ကို ကြည့်ပါ။');
-        }
-
+    <script>
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const fileList = document.getElementById('fileList');
         const uploadBtn = document.getElementById('uploadBtn');
         const successMessage = document.getElementById('successMessage');
-        const errorMessage = document.getElementById('errorMessage');
-        const uploadedFiles = document.getElementById('uploadedFiles');
+        const linkContainer = document.getElementById('linkContainer');
         
         let selectedFiles = [];
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'upload') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('uploadTab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('downloadTab').classList.add('active');
+            }
+        }
 
         uploadArea.addEventListener('click', () => fileInput.click());
 
@@ -439,7 +492,7 @@
         function addFiles(files) {
             const validFiles = files.filter(file => {
                 if (file.size > MAX_FILE_SIZE) {
-                    showError(`${file.name} သည် အရွယ်အစား ကြီးလွန်းပါသည် (Max 10MB)`);
+                    alert(`${file.name} သည် အရွယ်အစား ကြီးလွန်းပါသည် (Max 5MB)`);
                     return false;
                 }
                 return true;
@@ -461,18 +514,17 @@
                         <div class="file-details">
                             <div class="file-name">${file.name}</div>
                             <div class="file-size">${formatFileSize(file.size)}</div>
-                            <div class="file-progress" id="progress-${index}"></div>
                         </div>
                     </div>
                     <div class="file-actions">
-                        <button class="btn btn-remove" onclick="window.removeFile(${index})">❌</button>
+                        <button class="btn btn-remove" onclick="removeFile(${index})">❌</button>
                     </div>
                 `;
                 fileList.appendChild(fileItem);
             });
         }
 
-        window.removeFile = function(index) {
+        function removeFile(index) {
             selectedFiles.splice(index, 1);
             renderFileList();
             uploadBtn.disabled = selectedFiles.length === 0;
@@ -481,8 +533,7 @@
         function getFileIcon(filename) {
             const ext = filename.split('.').pop().toLowerCase();
             const icons = {
-                'pdf': '📄',
-                'doc': '📝', 'docx': '📝',
+                'pdf': '📄', 'doc': '📝', 'docx': '📝',
                 'xls': '📊', 'xlsx': '📊',
                 'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
                 'mp4': '🎥', 'avi': '🎥', 'mov': '🎥',
@@ -501,100 +552,97 @@
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
         uploadBtn.addEventListener('click', async () => {
-            if (selectedFiles.length === 0 || !storage) return;
+            if (selectedFiles.length === 0) return;
 
             uploadBtn.disabled = true;
-            uploadBtn.textContent = '⏳ Upload လုပ်နေသည်...';
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-            uploadedFiles.style.display = 'none';
-            uploadedFiles.innerHTML = '';
-
-            const uploadPromises = selectedFiles.map((file, index) => {
-                return uploadFile(file, index);
-            });
+            uploadBtn.textContent = '⏳ Processing...';
 
             try {
-                const results = await Promise.all(uploadPromises);
+                linkContainer.innerHTML = '';
                 
-                successMessage.style.display = 'block';
-                uploadedFiles.style.display = 'block';
-                
-                results.forEach(result => {
-                    const uploadedItem = document.createElement('div');
-                    uploadedItem.className = 'uploaded-item';
-                    uploadedItem.innerHTML = `
-                        <div><strong>${result.name}</strong></div>
-                        <div class="uploaded-link">
-                            <input type="text" value="${result.url}" readonly id="link-${result.id}">
-                            <button class="btn btn-copy" onclick="window.copyToClipboard('link-${result.id}')">📋</button>
-                            <a href="${result.url}" target="_blank" class="btn-download">⬇️</a>
-                        </div>
-                    `;
-                    uploadedFiles.appendChild(uploadedItem);
-                });
+                for (let file of selectedFiles) {
+                    const reader = new FileReader();
+                    
+                    await new Promise((resolve) => {
+                        reader.onload = function(e) {
+                            const fileData = {
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                data: e.target.result,
+                                timestamp: Date.now()
+                            };
+                            
+                            const code = generateCode();
+                            const files = JSON.parse(localStorage.getItem('sharedFiles') || '{}');
+                            files[code] = fileData;
+                            localStorage.setItem('sharedFiles', JSON.stringify(files));
+                            
+                            const linkItem = document.createElement('div');
+                            linkItem.className = 'link-item';
+                            linkItem.innerHTML = `
+                                <span class="link-label">${file.name}:</span>
+                                <input type="text" class="link-input" value="${code}" readonly id="link-${code}">
+                                <button class="btn btn-copy" onclick="copyCode('link-${code}')">📋 Copy</button>
+                            `;
+                            linkContainer.appendChild(linkItem);
+                            resolve();
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
 
+                successMessage.style.display = 'block';
+                uploadBtn.textContent = '✅ Success!';
                 selectedFiles = [];
                 renderFileList();
-                uploadBtn.textContent = '✅ Upload အောင်မြင်ပါပြီ';
                 
             } catch (error) {
-                showError('Upload မအောင်မြင်ပါ: ' + error.message);
+                alert('Error: ' + error.message);
                 uploadBtn.disabled = false;
-                uploadBtn.textContent = '🚀 Upload လုပ်မည်';
+                uploadBtn.textContent = '🚀 Generate Links';
             }
         });
 
-        async function uploadFile(file, index) {
-            return new Promise((resolve, reject) => {
-                const timestamp = Date.now();
-                const fileName = `${timestamp}_${file.name}`;
-                const storageRef = ref(storage, 'uploads/' + fileName);
-                const uploadTask = uploadBytesResumable(storageRef, file);
-
-                uploadTask.on('state_changed',
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        const progressElement = document.getElementById(`progress-${index}`);
-                        if (progressElement) {
-                            progressElement.textContent = `📊 ${Math.round(progress)}%`;
-                        }
-                    },
-                    (error) => {
-                        reject(error);
-                    },
-                    async () => {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        resolve({
-                            name: file.name,
-                            url: downloadURL,
-                            id: timestamp
-                        });
-                    }
-                );
-            });
+        function generateCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        window.copyToClipboard = function(elementId) {
+        function copyCode(elementId) {
             const input = document.getElementById(elementId);
             input.select();
             document.execCommand('copy');
             
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = '✅';
-            setTimeout(() => {
-                btn.textContent = originalText;
-            }, 2000);
+            alert('📋 Code copied!');
+        }
+
+        function downloadFile() {
+            const code = document.getElementById('downloadCode').value.trim().toUpperCase();
+            const filePreview = document.getElementById('filePreview');
+            
+            if (!code) {
+                alert('Download code ထည့်ပါ');
+                return;
+            }
+
+            const files = JSON.parse(localStorage.getItem('sharedFiles') || '{}');
+            const fileData = files[code];
+
+            if (!fileData) {
+                alert('❌ Invalid code');
+                filePreview.style.display = 'none';
+                return;
+            }
+
+            filePreview.style.display = 'block';
+            filePreview.innerHTML = `
+                <div class="preview-name">📎 ${fileData.name}</div>
+                <div class="preview-size">📊 ${formatFileSize(fileData.size)}</div>
+                <a href="${fileData.data}" download="${fileData.name}" class="btn-download-file">
+                    ⬇️ Download ${fileData.name}
+                </a>
+            `;
         }
     </script>
 </body>
