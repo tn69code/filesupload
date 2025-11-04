@@ -1,7 +1,7 @@
 // functions/view-raw.js
 const fetch = require('node-fetch');
 
-// ဤနေရာတွင် သင့် Repository အချက်အလက်များကို မှန်ကန်စွာ ထည့်သွင်းပါ
+// 🛑 သင့် Repository အချက်အလက်များကို ဤနေရာတွင် ပြင်ဆင်ပါ။
 const REPO_OWNER = "tn69code";
 const REPO_NAME = "filesupload";
 const BRANCH_NAME = "main"; 
