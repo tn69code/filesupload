@@ -13,7 +13,6 @@ exports.handler = async (event, context) => {
         return { statusCode: 400, body: 'Missing path parameter.' };
     }
 
-    // Raw GitHub URL ကို တည်ဆောက်သည်
     const rawGitHubUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH_NAME}/${path}`;
 
     try {
@@ -23,13 +22,12 @@ exports.handler = async (event, context) => {
             return { statusCode: response.status, body: `Error fetching content from GitHub: ${response.statusText}` };
         }
 
-        // Content ကို Text အနေနဲ့ ဖတ်ပြီး၊ MIME Type ကို Force ပြောင်းသည်
         const contentText = await response.text();
 
         return {
             statusCode: 200,
             headers: {
-                // Browser က Download မလုပ်ဘဲ Text အနေဖြင့် ပြသရန်
+                // 🛑 .sh ဖိုင်တွေကို Download မလုပ်ဘဲ Code View ပေးရန်
                 'Content-Type': 'text/plain; charset=utf-8', 
                 'Access-Control-Allow-Origin': '*',
             },
