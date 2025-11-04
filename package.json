@@ -1,7 +1,7 @@
 {
   "name": "netlify-github-uploader",
   "version": "1.0.0",
-  "description": "Upload files to GitHub via Netlify Function",
+  "description": "Upload file to GitHub via Netlify Function",
   "main": "index.js",
   "dependencies": {
     "node-fetch": "^2.6.1"
