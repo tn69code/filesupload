@@ -23,7 +23,10 @@ async function getFileSha(path) {
         return null; // ဖိုင်မရှိရင် null ပြန်ပို့ပါ
     }
     
-    const errorData = await response.json();
+    // Error တက်တဲ့အခါ JSON ပြန်မလာရင်တောင် Message ပါအောင် ကိုင်တွယ်သည်
+    let errorData = {};
+    try { errorData = await response.json(); } catch (e) { errorData.message = response.statusText; }
+    
     throw new Error(`SHA Fetch Failed: ${response.status} - ${errorData.message || response.statusText}`);
 }
 
@@ -40,7 +43,11 @@ async function uploadToGitHub(path, content, message, existingSha) {
     });
 
     if (response.status === 201 || response.status === 200) { return await response.json(); } 
-    throw new Error(`Upload Failed: ${(await response.json()).message || response.statusText}`);
+    
+    let errorData = {};
+    try { errorData = await response.json(); } catch (e) { errorData.message = response.statusText; }
+    
+    throw new Error(`Upload Failed: ${response.status} - ${errorData.message || response.statusText}`);
 }
 
 // Counter ကို တိုးမြှင့်သည် (Token လိုအပ်သည်)
@@ -67,7 +74,7 @@ async function incrementCounter() {
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') { return { statusCode: 405, body: 'Method Not Allowed' }; }
     
-    if (!GITHUB_TOKEN) { return { statusCode: 500, body: 'Missing GITHUB_TOKEN environment variable.' }; }
+    if (!GITHUB_TOKEN) { return { statusCode: 500, body: JSON.stringify({ error: 'Missing GITHUB_TOKEN environment variable.' }) }; }
 
     try {
         const body = JSON.parse(event.body);
