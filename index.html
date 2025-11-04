@@ -10,9 +10,10 @@
     
     <style>
         /* CSS Styles (ယခင်အတိုင်း) */
-        :root {--primary-color: #4a90e2; --fb-blue: #1877f2; /* ... */}
+        :root {--primary-color: #4a90e2; --primary-hover: #357bd8; /* ... */ }
         /* ... */
         .status-success a { color: var(--primary-color); text-decoration: underline; word-break: break-all; }
+        .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         /* ... (ကျန်သော CSS များ) ... */
     </style>
 </head>
@@ -48,15 +49,14 @@
 
     <script>
         // ⚠️ GITHUB_TOKEN ကို လုံးဝဖယ်ရှားလိုက်ပြီ။
-        
+
+        // 🛑 သင့်ရဲ့ GitHub/Facebook အချက်အလက်များကို ဤနေရာတွင် ပြင်ဆင်ပါ။
         const REPO_OWNER = "tn69code"; 
         const REPO_NAME = "filesupload";
         const COUNTER_FILE_PATH = "upload_count.json"; 
         const BRANCH_NAME = "main"; 
-        const FACEBOOK_URL = "YOUR_FACEBOOK_URL_HERE"; // ဤနေရာတွင် ပြင်ပါ
-        
-        // Custom Domain URL
-        const BASE_URL_FOR_CONTENT = "https://github-uploader.tak.today"; 
+        const FACEBOOK_URL = "YOUR_FACEBOOK_URL_HERE"; 
+        const BASE_URL_FOR_CONTENT = "https://github-uploader.tak.today"; // Custom Domain URL
 
         const fileInput = document.getElementById('fileInput');
         const repoPathInput = document.getElementById('repoPath');
