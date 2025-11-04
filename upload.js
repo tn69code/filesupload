@@ -1,13 +1,16 @@
-// functions/upload.js ကို ပြင်ဆင်ရန်
+// functions/upload.js
+const fetch = require('node-fetch');
 
-// ... (ယခင် Code များ) ...
+// 🛑 Netlify Dashboard တွင် သတ်မှတ်ထားသော GITHUB_TOKEN ကို ယူသုံးသည်
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
+const REPO_OWNER = "tn69code";
+const REPO_NAME = "filesupload";
+const BRANCH_NAME = "main"; 
+const COUNTER_FILE_PATH = "upload_count.json";
 
 // SHA ကို ရယူသည် (Token လိုအပ်သည်)
 async function getFileSha(path) {
-    // ဤနေရာတွင် Error Handling ကို ပိုမို တင်းကျပ်စွာ ထားရှိသည်
     const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}?ref=${BRANCH_NAME}`;
-    
-    // Authorization Header ကို မဖြစ်မနေ ထည့်ရမည်
     const response = await fetch(apiUrl, {
         method: 'GET',
         headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -20,31 +23,81 @@ async function getFileSha(path) {
         return null; // ဖိုင်မရှိရင် null ပြန်ပို့ပါ
     }
     
-    // 403 (Permission) သို့မဟုတ် အခြား Error များ တက်လာရင် Error ကို ပြန်ပစ်ပါ
     const errorData = await response.json();
     throw new Error(`SHA Fetch Failed: ${response.status} - ${errorData.message || response.statusText}`);
 }
 
-// ... (ကျန်သော Code များ) ...
+// ဖိုင်ကို GitHub သို့ Upload/Update လုပ်သည် (Token လိုအပ်သည်)
+async function uploadToGitHub(path, content, message, existingSha) {
+    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
+    const data = { message: message, content: content, sha: existingSha, branch: BRANCH_NAME };
+    if (existingSha === null) delete data.sha;
+
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (response.status === 201 || response.status === 200) { return await response.json(); } 
+    throw new Error(`Upload Failed: ${(await response.json()).message || response.statusText}`);
+}
+
+// Counter ကို တိုးမြှင့်သည် (Token လိုအပ်သည်)
+async function incrementCounter() {
+    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COUNTER_FILE_PATH}`;
+    const sha = await getFileSha(COUNTER_FILE_PATH); 
+    let currentCount = 0;
+    
+    if (sha) {
+        const getResponse = await fetch(apiUrl, { method: 'GET', headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        const data = await getResponse.json();
+        currentCount = JSON.parse(Buffer.from(data.content, 'base64').toString()).count || 0;
+    }
+    
+    const newCount = currentCount + 1;
+    const newContentString = JSON.stringify({ count: newCount }, null, 2); 
+    const newBase64Content = Buffer.from(newContentString).toString('base64');
+    
+    await uploadToGitHub(COUNTER_FILE_PATH, newBase64Content, `Auto-increment counter to ${newCount}`, sha);
+    return newCount;
+}
+
 
 exports.handler = async (event) => {
-    // ... (ယခင် Code များ) ...
+    if (event.httpMethod !== 'POST') { return { statusCode: 405, body: 'Method Not Allowed' }; }
     
+    if (!GITHUB_TOKEN) { return { statusCode: 500, body: 'Missing GITHUB_TOKEN environment variable.' }; }
+
     try {
-        // ... (body parsing) ...
+        const body = JSON.parse(event.body);
         const { path, content, fileName } = body; 
 
         // 1. File Upload/Update အတွက် SHA ကို စစ်ဆေးခြင်း
-        // 🛑 အကယ်၍ Token မှန်ရင် ဒီနေရာကနေ SHA ကို ရမှာပါ။ Token မှားရင် ဒီနေရာကနေ Error တက်ပြီး Client ဆီ ပြန်ရောက်ပါမယ်။
         const existingSha = await getFileSha(path); 
+        const action = existingSha ? "Update" : "Create";
+        const commitMessage = `${action}: ${fileName} (${new Date().toLocaleTimeString()})`;
         
-        // ... (ကျန်သော Logic များ) ...
-        
+        const uploadResult = await uploadToGitHub(path, content, commitMessage, existingSha);
+
+        // 2. Counter Update
+        const newCount = await incrementCounter();
+
+        return {
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: uploadResult.content.path,
+                newCount: newCount 
+            })
+        };
+
     } catch (error) {
-        // 🛑 Netlify Function ကနေ Client (index.html) ဆီကို JSON Error ပြန်ပို့ရန်
+        // 🛑 Client (index.html) ဆီကို JSON Error ပြန်ပို့ရန်
+        console.error("Function Error:", error);
         return { 
             statusCode: 500, 
-            headers: { 'Content-Type': 'application/json' }, // JSON Error အဖြစ် ပြန်ပို့သည်
+            headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ error: error.message || 'Unknown server error' }) 
         };
     }
