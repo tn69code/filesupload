@@ -1,8 +1,11 @@
 // functions/upload.js
 const fetch = require('node-fetch');
 
-// 🛑 Netlify Dashboard တွင် သတ်မှတ်ထားသော GITHUB_TOKEN ကို ယူသုံးသည်
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
+// 🛑 Variable Name ကို MY_GITHUB_TOKEN အဖြစ် ပြောင်းလဲထားသည်။
+// (Netlify ရဲ့ GITHUB_TOKEN conflict ကို ရှောင်ရှားရန်နှင့် Scope အခက်အခဲကို ဖြေရှင်းရန်)
+const GITHUB_TOKEN = process.env.MY_GITHUB_TOKEN; 
+
+// 🛑 သင့် Repository အချက်အလက်များကို ဤနေရာတွင် ပြင်ဆင်ပါ။
 const REPO_OWNER = "tn69code";
 const REPO_NAME = "filesupload";
 const BRANCH_NAME = "main"; 
@@ -74,7 +77,8 @@ async function incrementCounter() {
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') { return { statusCode: 405, body: 'Method Not Allowed' }; }
     
-    if (!GITHUB_TOKEN) { return { statusCode: 500, body: JSON.stringify({ error: 'Missing GITHUB_TOKEN environment variable.' }) }; }
+    // 🛑 Token ကို GITHUB_TOKEN အစား MY_GITHUB_TOKEN အဖြစ် စစ်ဆေးသည်။
+    if (!GITHUB_TOKEN) { return { statusCode: 500, body: JSON.stringify({ error: 'Missing MY_GITHUB_TOKEN environment variable. Check Netlify Environment Settings.' }) }; }
 
     try {
         const body = JSON.parse(event.body);
