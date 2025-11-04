@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 GitHub File Uploader (Secure Version)</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* CSS Styles (ယခင်အတိုင်း) */
+        :root {--primary-color: #4a90e2; --fb-blue: #1877f2; /* ... */}
+        /* ... */
+        .status-success a { color: var(--primary-color); text-decoration: underline; word-break: break-all; }
+        /* ... (ကျန်သော CSS များ) ... */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 GitHub ဖိုင် Upload စနစ်</h1>
+
+        <div class="counter-card-wrapper">
+            <div class="counter-card">
+                <span class="counter-label">စုစုပေါင်း Upload အောင်မြင်မှု</span>
+                <span id="uploadCounter" class="counter-value">...</span>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="fileInput">📂 Upload လုပ်မယ့် ဖိုင် ရွေးပါ:</label>
+            <input type="file" id="fileInput">
+        </div>
+
+        <div class="input-group">
+            <label for="repoPath">📍 GitHub လမ်းကြောင်း:</label>
+            <input type="text" id="repoPath" placeholder="ဖိုင်ရွေးချယ်ပြီးပါက ဖိုင်နာမည်ဖြင့် အလိုအလျောက်ပေါ်လာပါမည်">
+        </div>
+
+        <button id="uploadButton">📤 GitHub သို့ Upload လုပ်မည်</button>
+        
+        <div id="statusMessage" class="status-waiting">အခြေအနေ: Upload စတင်ရန် အဆင်သင့်</div>
+    </div>
+    
+    <div id="floatingFbBtn" title="ဆက်သွယ်ရန် (Facebook)">
+        <i class="fab fa-facebook-f"></i>
+    </div>
+
+    <script>
+        // ⚠️ GITHUB_TOKEN ကို လုံးဝဖယ်ရှားလိုက်ပြီ။
+        
+        const REPO_OWNER = "tn69code"; 
+        const REPO_NAME = "filesupload";
+        const COUNTER_FILE_PATH = "upload_count.json"; 
+        const BRANCH_NAME = "main"; 
+        const FACEBOOK_URL = "YOUR_FACEBOOK_URL_HERE"; // ဤနေရာတွင် ပြင်ပါ
+        
+        // Custom Domain URL
+        const BASE_URL_FOR_CONTENT = "https://github-uploader.tak.today"; 
+
+        const fileInput = document.getElementById('fileInput');
+        const repoPathInput = document.getElementById('repoPath');
+        const uploadButton = document.getElementById('uploadButton');
+        const uploadCounterElement = document.getElementById('uploadCounter');
+        const floatingFbBtn = document.getElementById('floatingFbBtn'); 
+        // ... (ကျန်သော element selection များ) ...
+
+        // --- Modal & Floating Button Logic (ယခင်အတိုင်း) ---
+        // ...
+
+        // --- Counter Logic (GitHub Pages မှ ဖတ်သည်) ---
+        async function initializeCounter() {
+            const timestamp = new Date().getTime(); 
+            const apiUrl = `${BASE_URL_FOR_CONTENT}/${COUNTER_FILE_PATH}?t=${timestamp}`;
+            uploadCounterElement.textContent = '...'; 
+
+            try {
+                const response = await fetch(apiUrl);
+                if (response.status === 200) {
+                    let data = {};
+                    try { data = await response.json(); } 
+                    catch (e) { console.warn('JSON parsing error.'); uploadCounterElement.textContent = 0; return; }
+                    uploadCounterElement.textContent = data.count || 0; 
+                } else if (response.status === 404) {
+                    uploadCounterElement.textContent = 0; 
+                } else {
+                     uploadCounterElement.textContent = `Error ${response.status}`;
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                uploadCounterElement.textContent = '❌';
+            }
+        }
+        
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) { const selectedFile = this.files[0]; const originalFileName = selectedFile.name; repoPathInput.value = `uploads/${originalFileName}`; } 
+            else { repoPathInput.value = ''; }
+        });
+
+        uploadButton.addEventListener('click', handleUpload);
+        window.addEventListener('load', initializeCounter); 
+
+        // --- Upload Logic (Netlify Function API ကို ခေါ်ဆိုခြင်း) ---
+        async function handleUpload() {
+            const statusElement = document.getElementById('statusMessage');
+            const repoPath = repoPathInput.value.trim();
+            const file = fileInput.files[0];
+
+            if (fileInput.files.length === 0 || !repoPath) { statusElement.innerHTML = `<p>❌ ဖိုင် သို့မဟုတ် GitHub လမ်းကြောင်း ထည့်သွင်းရန် လိုအပ်ပါသည်။</p>`; statusElement.className = 'status-error'; return; }
+
+            statusElement.textContent = `1/2: Checking file and encoding...`;
+            statusElement.className = 'status-waiting';
+
+            try {
+                const base64Content = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result.split('base64,')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                statusElement.textContent = `2/2: Sending request to Netlify server...`;
+                
+                // Netlify Function API ခေါ်ဆိုခြင်း
+                const apiResponse = await fetch('/.netlify/functions/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: repoPath,
+                        content: base64Content,
+                        fileName: file.name
+                    })
+                });
+
+                if (apiResponse.status !== 200) {
+                    const errorData = await apiResponse.json();
+                    throw new Error(errorData.error || `Server Error: ${apiResponse.statusText}`);
+                }
+
+                const result = await apiResponse.json(); 
+                
+                statusElement.textContent = `Upload successful. Counter updated to ${result.newCount}`;
+                
+                // UI Update
+                uploadCounterElement.textContent = result.newCount;
+                
+                // Link ပြသခြင်း
+                const viewCodeProxyUrl = `/.netlify/functions/view-raw?path=${result.path}`; 
+                
+                const message = '✅ ဖိုင်အား အောင်မြင်စွာ လုပ်ဆောင်ပြီးပါပြီ။';
+
+                statusElement.innerHTML = `
+                    <p>${message}</p>
+                    <p>Code View Link (Proxy):</p>
+                    <a href="${viewCodeProxyUrl}" target="_blank" style="word-break: break-all;">${viewCodeProxyUrl}</a>
+                `;
+                statusElement.className = 'status-success';
+
+            } catch (error) {
+                console.error('Upload Error:', error);
+                const displayError = error.message;
+
+                statusElement.innerHTML = `
+                    <p>❌ Upload မအောင်မြင်ပါ။</p>
+                    <p>Error: ${displayError}</p>
+                `;
+                statusElement.className = 'status-error';
+            }
+        }
+    </script>
+</body>
+</html>
