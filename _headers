@@ -1,0 +1,5 @@
+/uploads/*.sh
+  Content-Type: text/plain; charset=utf-8
+
+/uploads/*.sh
+  Content-Disposition: inline
